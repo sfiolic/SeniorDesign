@@ -3,6 +3,8 @@
 #include <DallasTemperature.h>
 #include <ESP8266WiFi.h>
 #include <FirebaseArduino.h>  
+#include <LiquidCrystal_I2C.h>
+#include <time.h>
 
 
 
@@ -22,19 +24,34 @@ OneWire oneWire(oneWireBus);
 // Pass our oneWire reference to Dallas Temperature sensor
 DallasTemperature sensors(&oneWire);
 
+// set the LCD number of columns and rows
+int lcdColumns = 16;
+int lcdRows = 2;
+
+// set LCD address, number of columns and rows
+// if you don't know your display address, run an I2C scanner sketch
+LiquidCrystal_I2C lcd(0x27, lcdColumns, lcdRows);  
+
+// for time stamp
+int timezone = 5;
+int dst = 0;
+
 void setup() {
   // Start the Serial Monitor
   Serial.begin(9600);
   // Start the DS18B20 sensor
-  sensors.begin();
+   sensors.begin();
 
    Serial.begin(9600);
    delay(500);
-
+  
    Serial.println();
    Serial.print("MAC: ");
    Serial.println(WiFi.macAddress());
-
+   // initialize LCD
+   lcd.init();
+  // turn on LCD backlight                      
+   lcd.backlight();
    wifiConnect();
 
    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
@@ -51,7 +68,18 @@ void loop() {
   Serial.println("ºC");
   Serial.print(temperatureF);
   Serial.println("ºF");
-  Serial.println(Firebase.pushString("", String(temperatureF)));   //setup path and send readings
+  
+  time_t now = time(nullptr);
+  Serial.println(ctime(&now));
+  // set cursor to first column, first row
+  lcd.setCursor(0, 0);
+  // print message
+  lcd.print(String(temperatureC));
+  // temp in C and time stamp string
+  String dataToFirebase = String(temperatureC) + ',' + ctime(&now);
+  //send data to firebase
+  Serial.println(Firebase.pushString("temperature", dataToFirebase));   //setup path and send readings
+  
   if (Firebase.failed()) // Check for errors 
   {
     Serial.print("setting /number failed:");
@@ -60,10 +88,12 @@ void loop() {
 
 
   delay(5000);
+  lcd.clear(); 
 }
 
 void wifiConnect()
 {
+  WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);             // Connect to the network
   Serial.print("Connecting to ");
   Serial.print(WIFI_SSID); Serial.println(" ...");
@@ -79,4 +109,12 @@ void wifiConnect()
   Serial.println("Connection established!");  
   Serial.print("IP address:\t");
   Serial.println(WiFi.localIP());         // Send the IP address of the ESP8266 to the computer
+
+  
+  configTime(19 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+  Serial.println("\nWaiting for time");
+  while (!time(nullptr)) {
+    Serial.print(".");
+    delay(1000);
+  }
 }
