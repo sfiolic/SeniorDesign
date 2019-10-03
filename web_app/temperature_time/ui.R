@@ -28,12 +28,13 @@ shinyUI(fluidPage(
                                       list("Verizon", "AT&T")
                  ),
                  actionButton('lcd', 'Turn On/Off LCD'),
-                 div(textOutput('switch', inline = TRUE)),
+                 # helpText(textOutput('switch', inline = TRUE)),
                  
                  # Output Information  
                  hr(),
                  div(strong("Current Temperature: "), textOutput("current", inline = TRUE)),
                  div(strong("Current Time: "), textOutput("time", inline = TRUE)),
+                 # div(strong("State of Device: "), textOutput("state", inline = TRUE)),
                  br(),
                  helpText("Click and drag to zoom in (double click to zoom back out).")),  
     

@@ -23,14 +23,15 @@ shinyServer(function(input, output) {
   # subject to change
   df_true <- data.frame(Data = unlist(download(projectURL = "https://senior-design-lab-1-d0500.firebaseio.com",
                                                      fileName = "temperature")))
-  df_true <- separate(data = df_true, col = Data, into = c("Temperature", "Time"), sep = "\\,") %>% mutate(Temperature = as.numeric(Temperature))
+  df_true <- separate(data = df_true, col = Data, into = c("TemperatureC", "TemperatureF", "Time"), sep = "\\,") %>% mutate(Temperature = as.numeric(TemperatureC))
   df_true$Time <- strptime(df_true$Time, "%a %b %d %H:%M:%S %Y")
   
+  df_new <- df_true
   
   # enable switch
   values <- reactiveValues()
-  values$enable <- FALSE
-  values$lcd <- 1
+  values$enable = FALSE
+  values$lcd = 1
   
   autoInvalidate <- reactiveTimer(1000)
   
@@ -46,18 +47,18 @@ shinyServer(function(input, output) {
     
     if (isolate(values$lcd) == 1)
     {
+      lcd = 0
       values$lcd = 0
       output$switch <- renderText({"LCD is On"})
     }
     else {
+      lcd = 1
       values$lcd = 1
       output$switch <- renderText({"LCD is Off"})
     }
-    v <- isolate(values$lcd)
-    check <- upload(list(str(v)), projectURL = "https://senior-design-lab-1-d0500.firebaseio.com", directory = "LCD")
-    print(check)
     
-    
+    put(list(lcd), projectURL = "https://senior-design-lab-1-d0500.firebaseio.com", directory = "LCD")
+   # print(check)
     
   })
   
@@ -65,7 +66,7 @@ shinyServer(function(input, output) {
     # maybe button instead
     # autoInvalidate()
     invalidateLater(8000)
-    if(max(df_true$Temperature) > isolate(input$max)){
+    if(!is.null(input$min) && max(df_new$Temperature) > isolate(input$max)){
       # Verizon: number@vtext.com
       # AT&T: number@txt.att.net
       # other carriers: https://20somethingfinance.com/how-to-send-text-messages-sms-via-email-for-free/
@@ -76,12 +77,12 @@ shinyServer(function(input, output) {
       else if (isolate(input$icons == 'AT&T')){
         phone_number <- paste0(isolate(input$phone), "@txt.att.net")
       }
-      
 
       send.mail(from = "chichinwakama@gmail.com",
                 to = phone_number,
-                subject="Sensor Alert: Max Senors",
-                body =paste("Failed Sensors! Maximum Limit: ",max(df_true$Temperature)),
+                subject="Sensor Alert:",
+                body =paste("Sensor exceeded max temp:",max(df_new$Temperature), "at", 
+                            as.character(df_new[df_new$Temperature >= max(df_new$Temperature), ][1, 'Time'])),
                 smtp = list(host.name = "smtp.gmail.com", port = 465,
                             user.name="chichinwakama@gmail.com", passwd="chibuzo12", ssl=TRUE),
                 authenticate = TRUE,
@@ -93,11 +94,21 @@ shinyServer(function(input, output) {
   observe({
     # autoInvalidate()
     invalidateLater(8000)
-    if(min(df_true$Temperature) < isolate(input$min)){
+    
+    if (isolate(input$icons == 'Verizon')){
+      phone_number <- paste0(isolate(input$phone), "@vtext.com")
+    }
+    else if (isolate(input$icons == 'AT&T')){
+      phone_number <- paste0(isolate(input$phone), "@txt.att.net")
+    }
+    
+    
+    if(!is.null(input$min) && min(df_new$Temperature) < isolate(input$min)){
       send.mail(from = "chichinwakama@gmail.om",
-                to = paste0(isolate(input$phone), "@vtext.com"),
-                subject="Sensor Alert: Minimum Sensors",
-                body =paste("Failed Sensors! Minimum Limit: ",min(df_true$Temperature)),
+                to = phone_number,
+                subject="Sensor Alert:",
+                body =paste("Sensor value reached below min temp: ",min(df_true$Temperature), "at", 
+                            as.character(df_new[df_new$Temperature >= max(df_new$Temperature), ][1, 'Time'])),
                 smtp = list(host.name = "smtp.gmail.com", port = 465,
                             user.name="chichinwakama@gmail.com", passwd="chibuzo12", ssl=TRUE),
                 authenticate = TRUE,
@@ -110,7 +121,7 @@ shinyServer(function(input, output) {
     invalidateLater(2000)
     df <- data.frame(Data = unlist(download(projectURL = "https://senior-design-lab-1-d0500.firebaseio.com",
                                  fileName = "temperature")))
-    df <- separate(data = df, col = Data, into = c("Temperature", "Time"), sep = "\\,") %>% mutate(Temperature = as.numeric(Temperature))
+    df <- separate(data = df, col = Data, into = c("TemperatureC", "TemperatureF", "Time"), sep = "\\,") %>% mutate(Temperature = as.numeric(TemperatureC))
     df$Time <- strptime(df$Time, "%a %b %d %H:%M:%S %Y")
     
     df_new <- df[!(row.names(df) %in% row.names(df_true)),]
@@ -120,28 +131,39 @@ shinyServer(function(input, output) {
     
     if (nrow(df_new) == 0 && isolate(values$enable))
     {
-      print("Device is off")
+      output$current <- renderText({
+        "No Data is Available"
+      })
+    }
+    else if (any(df_new$Temperature <= -127) ){
+      output$current <- renderText({
+        "Unplugged Sensor"
+      })
     }
     else 
     {
       df_true <- rbind(df_true, df_new)
-      print("Device is on")
+      output$current <- renderText({
+        tail(df_true, 1)$Temperature   
+      })
       values$enable <- TRUE
     }
     
     
+    output$time <- renderText({
+      as.character(tail(df_true, 1)$Time)   
+    })
+    
+    
     
     # convert to xts object before using dygraph
-    x3<- xts(df_true, order.by=df_true$Time) 
+    df_export <- df_true  %>% select(Temperature, Time) 
+    x3<- xts(df_export, order.by=df_export$Time) 
     dygraph(x3) %>% dyRangeSelector(height = 20) %>% dyOptions(colors = RColorBrewer::brewer.pal(8, "Dark2"), connectSeparatedPoints = TRUE)
   })
   
-  output$current <- renderText({
-    tail(df_true, 1)$Temperature   
-  })
   
-  output$time <- renderText({
-    as.character(tail(df_true, 1)$Time)   
-  })
+  
+  
   
 })
