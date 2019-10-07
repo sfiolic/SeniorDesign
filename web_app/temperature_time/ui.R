@@ -18,8 +18,8 @@ shinyUI(fluidPage(
   
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
-    sidebarPanel(numericInput("min", "Alert Minimum Temperature (°C):", -135), 
-                 numericInput("max", "Alert Maximum Temperature (°C):", 100), 
+    sidebarPanel(numericInput("min", "Alert Minimum Temperature:", -135), 
+                 numericInput("max", "Alert Maximum Temperature:", 100), 
                  textInput("phone", "Phone Number to send Alert Message:", "5078295432"),
                  radioButtons("icons", "Choose Provider:",
                                     choiceNames =
@@ -28,12 +28,15 @@ shinyUI(fluidPage(
                                       list("Verizon", "AT&T")
                  ),
                  actionButton('lcd', 'Turn On/Off LCD'),
-                 # helpText(textOutput('switch', inline = TRUE)),
                  
                  # Output Information  
                  hr(),
-                 div(strong("Current Temperature: "), textOutput("current", inline = TRUE)),
-                 div(strong("Current Time: "), textOutput("time", inline = TRUE)),
+                 # TODO: Should be bigger
+                 div(h1("Current Temperature: "), h2(textOutput("current", inline = TRUE))),
+                 div(h1("Current Time: "), h2(textOutput("time", inline = TRUE))),
+                 br(),
+                 actionButton('cf', 'Convert °C between °F'),
+                 #helpText(textOutput('switch', inline = TRUE)),
                  # div(strong("State of Device: "), textOutput("state", inline = TRUE)),
                  br(),
                  helpText("Click and drag to zoom in (double click to zoom back out).")),  
