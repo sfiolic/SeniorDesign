@@ -79,6 +79,12 @@ int displaySettings = 1;
 //options menu
 int optionsMenu = 0; 
 
+//settings page text only appears once
+int settingsPage = 1;
+
+//show current temp
+int showCurrTemp = 0;
+
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 void setup() {
@@ -135,7 +141,71 @@ void displayHvacUpdate(){
 
 void loopSettingMenu(){
   while (optionsMenu == 1){
+    // need the next 5 lines for detecting the touch
+    digitalWrite(13, HIGH);
+    TSPoint p = ts.getPoint();
+    digitalWrite(13, LOW);
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+
+    if (settingsPage){
+      tft.setCursor(0, 10);
+      tft.fillRect(0, 0, 230, 50, RED);
+      tft.setTextColor(YELLOW); tft.setTextSize(3);
+      tft.print("Set time>");
+  
+      tft.setCursor(0, 70);
+      tft.fillRect(0, 60, 230, 50, RED);
+      tft.setTextColor(YELLOW); tft.setTextSize(3);
+      tft.print("Set Week>");
+  
+      tft.setCursor(0, 130);
+      tft.fillRect(0, 120, 230, 50, RED);
+      tft.setTextColor(YELLOW); tft.setTextSize(3);
+      tft.print("Set Weekend>");
+  
+      tft.setCursor(0, 230);
+      tft.fillRect(0, 220, 230, 50, RED);
+      tft.setTextColor(YELLOW); tft.setTextSize(3);
+      tft.print("Back>");
+
+      settingsPage = 0;
+    }
     
+    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+      
+      // scale from 0->1023 to tft.width
+      p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      p.y = map(p.y, TS_MINY, TS_MAXY, tft.height(), 0);
+  
+      
+      Serial.print("("); Serial.print(p.x);
+      Serial.print(", "); Serial.print(p.y);
+      Serial.println(")");
+      //set date
+      if (p.x > 0 && p.x < 240 && p.y > 0 && p.y < 60) {
+        
+      }
+      //set week hold
+      else if (p.x > 0 && p.x < 240 && p.y > 70 && p.y < 120) {
+        
+      }
+      //set weekend hold
+      else if (p.x > 0 && p.x < 240 && p.y > 130 && p.y < 180) {
+        
+      }
+      //go back to main page
+      else if (p.x > 0 && p.x < 240 && p.y > 230 && p.y < 290) {
+        optionsMenu = 0;
+        displaySettings = 1;
+        displayHVAC = 1;
+        displaySetTemp = 1;
+        showCurrTemp = 1;
+        tft.fillScreen(BLACK);
+        
+      }
+      
+    }
   }
 }
 
@@ -178,8 +248,17 @@ void loop() {
     digitalWrite(12, LOW);
     digitalWrite(11, LOW);
   }
+
+  if (showCurrTemp){
+    tft.setCursor(0, 0);
+    tft.fillRect(0, 0, 200, 50, RED);
+    tft.setTextColor(YELLOW); tft.setTextSize(6);
+    tft.print((int)temperatureF);
+    //tft.print((char)0xBF);
+    tft.print("f");
+    showCurrTemp = 0;
+  }
   
- 
   if (temperatureFLast != (int)temperatureF){
     temperatureFLast = temperatureF;
     tft.setCursor(0, 0);
@@ -209,6 +288,32 @@ void loop() {
 
   if( displayHVAC){
     displayHvacUpdate();
+    
+    if(currentHVAC == 0){
+      tft.fillRect(190,120,50,20,WHITE);
+      tft.setTextColor(BLACK);
+      tft.setCursor(190,120); tft.setTextSize(2);
+      tft.print("Off");
+      tft.setTextColor(YELLOW);
+    }
+    else if( currentHVAC == 1){
+      tft.fillRect(190,150,50,20,RED);
+      tft.setCursor(190,150); tft.setTextSize(2);
+      tft.print("Heat");
+    }
+    else if (currentHVAC == 2){
+      tft.fillRect(190,180,50,20,BLUE);
+      tft.setCursor(190,180); tft.setTextSize(2);
+      tft.print("AC");
+    }
+    else if (currentHVAC == 3){
+      tft.fillRect(190,210,50,20,WHITE);
+      tft.setTextColor(BLACK);
+      tft.setCursor(190,210); tft.setTextSize(2);
+      tft.print("Auto");
+      tft.setTextColor(YELLOW);
+    }
+    
   }
 
   if (displaySetTemp){
@@ -257,8 +362,10 @@ void loop() {
       currentHVAC = 0;
       displayHvacUpdate();
       tft.fillRect(190,120,50,20,WHITE);
+      tft.setTextColor(BLACK);
       tft.setCursor(190,120); tft.setTextSize(2);
       tft.print("Off");
+      tft.setTextColor(YELLOW);
     }
     //heat
     else if (p.x > 200 && p.x < 250 && p.y > 160 && p.y < 180){
@@ -281,20 +388,18 @@ void loop() {
       currentHVAC = 3;
       displayHvacUpdate();
       tft.fillRect(190,210,50,20,WHITE);
+      tft.setTextColor(BLACK);
       tft.setCursor(190,210); tft.setTextSize(2);
       tft.print("Auto");
+      tft.setTextColor(YELLOW);
     }
     else if (p.x > 150 && p.x < 250 && p.y > 300 && p.y < 330){
       tft.fillScreen(BLACK);
       optionsMenu = 1;
+      settingsPage = 1;
       loopSettingMenu();
       
     }
-   
-
-
-    
-    
     
   }
 }
