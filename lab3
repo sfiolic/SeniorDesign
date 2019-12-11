@@ -3,12 +3,13 @@
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_TFTLCD.h> // Hardware-specific library
 #include <TouchScreen.h>
+#include <Wire.h>
+#include <RTClib.h>
 
-//#include <SoftwareSerial.h>
 
+RTC_DS1307 rtc;
+char daysOfTheWeek[7][7] = {"Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat"};
 
-
-//SoftwareSerial s(0,1);
 
 #if defined(__SAM3X8E__)
     #undef __FlashStringHelper::F(string_literal)
@@ -85,11 +86,35 @@ int settingsPage = 1;
 //show current temp
 int showCurrTemp = 0;
 
+//show time
+int displayTime  = 1;
+
+//last hour
+int prevHour;
+
+//last min
+int prevMin;
+
+//setting time
+int settingTime = 1;
+
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 void setup() {
-  //s.begin(9600);
-  Serial.begin(9600);
+  
+  Serial.begin(57600);
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+  if (! rtc.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
   
   // put your setup code here, to run once:
   tft.reset();
@@ -103,19 +128,6 @@ void setup() {
   pinMode(11, OUTPUT);
   //red led
   pinMode(12, OUTPUT);
-  char c = '\n';
-  String readTime;
- /* while (c != "\0"){
-    delay(10);
-    if (s.available() > 0){
-      c = s.read();
-      readTime += c;
-    }
-    delay(10);
-  }
-  */
-
-  
 }
 
 #define MINPRESSURE 10
@@ -138,6 +150,110 @@ void displayHvacUpdate(){
     tft.print("Auto");
     displayHVAC = 0;
 }
+
+void loopSettingTime(){
+  DateTime now = rtc.now();
+  //hour
+  tft.fillTriangle(50,30,30,70,70,70,RED);
+  tft.setCursor(30,80); tft.setTextSize(4);
+  tft.setTextColor(YELLOW);
+  tft.fillRect(30,75,55,35,BLACK);
+  tft.print(now.hour(), DEC);
+  tft.fillTriangle(50,150,30,110,70,110,RED);
+  //min
+  tft.fillTriangle(150,30,130,70,170,70,RED);
+  tft.setCursor(130,80); tft.setTextSize(4);
+  tft.setTextColor(YELLOW);
+  tft.fillRect(130,75,55,35,BLACK);
+  tft.print(now.minute(), DEC);
+  tft.fillTriangle(150,150,130,110,170,110,RED);
+  prevHour = now.hour();
+  prevMin = now.minute();
+
+  tft.setCursor(150, 280);
+  tft.fillRect(150, 270, 230, 50, RED);
+  tft.setTextColor(YELLOW); tft.setTextSize(3);
+  tft.print("Back>");
+  
+  while (settingTime){
+    // need the next 5 lines for detecting the touch
+    digitalWrite(13, HIGH);
+    TSPoint p = ts.getPoint();
+    digitalWrite(13, LOW);
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+      
+      // scale from 0->1023 to tft.width
+      p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      p.y = map(p.y, TS_MINY, TS_MAXY, tft.height(), 0);
+  
+      
+      Serial.print("("); Serial.print(p.x);
+      Serial.print(", "); Serial.print(p.y);
+      Serial.println(")");
+      //hour up
+      if (p.x > 35 && p.x < 80 && p.y > 50 && p.y < 85) {
+        prevHour = prevHour + 1;
+        if(prevHour > 23){
+          prevHour = 0;
+        }
+        delay(200);
+        tft.setCursor(30,80); tft.setTextSize(4);
+        tft.setTextColor(YELLOW);
+        tft.fillRect(30,75,55,35,BLACK); 
+        tft.print(prevHour);
+      }
+      //hour down
+      else if (p.x > 35 && p.x < 80 && p.y > 125 && p.y < 165) {
+        prevHour = prevHour - 1;
+        if(prevHour < 0){
+          prevHour = 23;
+        }
+        delay(200);
+        tft.setCursor(30,80); tft.setTextSize(4);
+        tft.setTextColor(YELLOW);
+        tft.fillRect(30,75,55,35,BLACK); 
+        tft.print(prevHour);
+      }
+      //min up 
+      else if (p.x > 135 && p.x < 180 && p.y > 50 && p.y < 85) {
+        prevMin = prevMin + 1;
+        if (prevMin > 59){
+          prevMin = 0;
+        }
+        delay(100);
+        tft.setCursor(130,80); tft.setTextSize(4);
+        tft.setTextColor(YELLOW);
+        tft.fillRect(130,75,55,35,BLACK);
+        tft.print(prevMin);
+      }
+      //min down
+      else if (p.x > 135 && p.x < 180 && p.y > 125 && p.y < 165) {
+        prevMin = prevMin - 1;
+        if (prevMin < 0){
+          prevMin = 59;
+        }
+        delay(100);
+        tft.setCursor(130,80); tft.setTextSize(4);
+        tft.setTextColor(YELLOW);
+        tft.fillRect(130,75,55,35,BLACK);
+        tft.print(prevMin);
+      }
+
+      //go back to main page
+      else if (p.x > 150 && p.x < 240 && p.y > 280 && p.y < 340) {
+        optionsMenu = 1;
+        tft.fillScreen(BLACK);
+        delay(500); 
+        settingsPage = 1;
+        settingTime = 0;
+        return;
+      }
+    }
+  }
+}
+
 
 void loopSettingMenu(){
   while (optionsMenu == 1){
@@ -164,8 +280,8 @@ void loopSettingMenu(){
       tft.setTextColor(YELLOW); tft.setTextSize(3);
       tft.print("Set Weekend>");
   
-      tft.setCursor(0, 230);
-      tft.fillRect(0, 220, 230, 50, RED);
+      tft.setCursor(0, 280);
+      tft.fillRect(0, 270, 230, 50, RED);
       tft.setTextColor(YELLOW); tft.setTextSize(3);
       tft.print("Back>");
 
@@ -184,7 +300,8 @@ void loopSettingMenu(){
       Serial.println(")");
       //set date
       if (p.x > 0 && p.x < 240 && p.y > 0 && p.y < 60) {
-        
+        tft.fillScreen(BLACK);
+        loopSettingTime();
       }
       //set week hold
       else if (p.x > 0 && p.x < 240 && p.y > 70 && p.y < 120) {
@@ -195,16 +312,17 @@ void loopSettingMenu(){
         
       }
       //go back to main page
-      else if (p.x > 0 && p.x < 240 && p.y > 230 && p.y < 290) {
+      else if (p.x > 0 && p.x < 240 && p.y > 280 && p.y < 340) {
         optionsMenu = 0;
         displaySettings = 1;
         displayHVAC = 1;
         displaySetTemp = 1;
         showCurrTemp = 1;
+        displayTime = 1;
         tft.fillScreen(BLACK);
-        
+        delay(500);
+        return;
       }
-      
     }
   }
 }
@@ -213,6 +331,7 @@ void loopSettingMenu(){
 
 
 void loop() {
+  DateTime now = rtc.now();
   // need the next 5 lines for detecting the touch
   digitalWrite(13, HIGH);
   TSPoint p = ts.getPoint();
@@ -250,33 +369,35 @@ void loop() {
   }
 
   if (showCurrTemp){
-    tft.setCursor(0, 0);
+    tft.setCursor(0, 5);
     tft.fillRect(0, 0, 200, 50, RED);
     tft.setTextColor(YELLOW); tft.setTextSize(6);
     tft.print((int)temperatureF);
-    //tft.print((char)0xBF);
-    tft.print("f");
+    tft.setTextSize(2);
+    tft.print(" o");
+    tft.setTextSize(6);
+    tft.print("F");
     showCurrTemp = 0;
   }
   
   if (temperatureFLast != (int)temperatureF){
     temperatureFLast = temperatureF;
-    tft.setCursor(0, 0);
+    tft.setCursor(0, 5);
     tft.fillRect(0, 0, 200, 50, RED);
     tft.setTextColor(YELLOW); tft.setTextSize(6);
     tft.print((int)temperatureF);
-    //tft.print((char)0xBF);
-    tft.print("f");
+    //tft.print((char)248);
+    tft.setTextSize(2);
+    tft.print(" o");
+    tft.setTextSize(6);
+    tft.print("F");
   }
 
   //
   tft.fillRect(0, 250, 40, 40, RED);
 
   tft.fillRect(60, 250, 40, 40, RED);
-  //time
-  tft.setCursor(0, 100);
-  tft.fillRect(0, 100, 150, 50, RED);
-
+  
   //settings
   if (displaySettings){
     tft.fillRect(140, 280, 100, 40, RED);
@@ -317,13 +438,46 @@ void loop() {
   }
 
   if (displaySetTemp){
-    tft.fillRect(25, 210, 50, 40, RED);
+    tft.fillRect(25, 210, 50, 35, RED);
+    tft.setCursor(25,210); tft.setTextSize(4);
+    tft.print(setCurrentTemp);
+    tft.fillRect(25, 210, 50, 35, RED);
     tft.setCursor(25,210); tft.setTextSize(4);
     tft.print(setCurrentTemp);
     displaySetTemp = 0;
   }
   
+  
+  if (displayTime){
+    //dat
+    tft.setCursor(10, 75);
+    tft.fillRect(0, 70, 150, 35, RED);
+    tft.setTextSize(3);
+    tft.print(daysOfTheWeek[now.dayOfTheWeek()]);
+    tft.setCursor(10, 110);
+    tft.fillRect(0, 110, 150, 35, RED);
+    tft.print(now.hour(), DEC);
+    tft.print(':');
+    tft.print(now.minute(), DEC);
+    prevHour = now.hour();
+    prevMin = now.minute();
+    displayTime = 0;
+  }
 
+  if (prevHour != now.hour() || prevMin != now.minute()){
+    tft.setCursor(10, 75);
+    tft.fillRect(0, 70, 150, 35, RED);
+    tft.setTextSize(3);
+    tft.print(daysOfTheWeek[now.dayOfTheWeek()]);
+    tft.setCursor(10, 110);
+    tft.fillRect(0, 110, 150, 35, RED);
+    tft.print(now.hour(), DEC);
+    tft.print(':');
+    tft.print(now.minute(), DEC);
+    prevHour = now.hour();
+    prevMin = now.minute();
+  
+  }
   
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
@@ -397,6 +551,7 @@ void loop() {
       tft.fillScreen(BLACK);
       optionsMenu = 1;
       settingsPage = 1;
+      delay(500);
       loopSettingMenu();
       
     }
