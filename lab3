@@ -28,8 +28,8 @@ char daysOfTheWeek[7][7] = {"Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat"};
 
 #define YP A3  // must be an analog pin, use "An" notation!
 #define XM A2  // must be an analog pin, use "An" notation!
-#define YM 9   // can be a digital pin
-#define XP 8   // can be a digital pin
+#define YM 23   // can be a digital pin
+#define XP 22   // can be a digital pin
 
 #define TS_MINX 150
 #define TS_MINY 120
@@ -48,7 +48,7 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 // optional
 #define LCD_RESET A4
 
-// Data wire is plugged into digital pin 2 on the Arduino
+// Data wire is plugged into digital pin 10 on the Arduino
 #define ONE_WIRE_BUS 10
 
 // Setup a oneWire instance to communicate with any OneWire device
@@ -97,6 +97,9 @@ int prevMin;
 
 //setting time
 int settingTime = 1;
+
+//Displays the set points
+int displaySetPoints=1;
 
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
@@ -327,7 +330,36 @@ void loopSettingMenu(){
   }
 }
 
+void viewPoints()
+{
+  //tft.fillRect(15, 8, 200, 40, RED);
+  tft.setCursor(20, 10);
+  tft.setTextSize(2);
+  tft.print("Set Point View");
+  while(1)
+  {
+    DateTime now = rtc.now();
+    // need the next 5 lines for detecting the touch
+    digitalWrite(13, HIGH);
+    TSPoint p = ts.getPoint();
+    digitalWrite(13, LOW);
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
 
+    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+    
+      // scale from 0->1023 to tft.width
+      p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      p.y = map(p.y, TS_MINY, TS_MAXY, tft.height(), 0);
+  
+      
+      Serial.print("("); Serial.print(p.x);
+      Serial.print(", "); Serial.print(p.y);
+      Serial.println(")");
+    }
+    
+  }
+}
 
 
 void loop() {
@@ -393,14 +425,14 @@ void loop() {
     tft.print("F");
   }
 
-  //
-  tft.fillRect(0, 250, 40, 40, RED);
+  
+  tft.fillTriangle(30, 310, 15, 265, 45, 265, BLUE);
 
-  tft.fillRect(60, 250, 40, 40, RED);
+  tft.fillTriangle(30, 180, 15, 225, 45, 225, RED);
   
   //settings
   if (displaySettings){
-    tft.fillRect(140, 280, 100, 40, RED);
+    tft.fillRect(140, 280, 100, 40, BLACK);
     tft.setCursor(140,280); tft.setTextSize(2);
     tft.print("Settings");
     displaySettings = 0;
@@ -438,12 +470,12 @@ void loop() {
   }
 
   if (displaySetTemp){
-    tft.fillRect(25, 210, 50, 35, RED);
-    tft.setCursor(25,210); tft.setTextSize(4);
+    tft.fillRect(10, 230, 50, 30, BLACK);
+    tft.setCursor(10,230); tft.setTextSize(4);
     tft.print(setCurrentTemp);
-    tft.fillRect(25, 210, 50, 35, RED);
-    tft.setCursor(25,210); tft.setTextSize(4);
-    tft.print(setCurrentTemp);
+    //tft.fillRect(25, 210, 50, 35, RED);
+    //tft.setCursor(25,210); tft.setTextSize(4);
+    //tft.print(setCurrentTemp);
     displaySetTemp = 0;
   }
   
@@ -478,6 +510,18 @@ void loop() {
     prevMin = now.minute();
   
   }
+
+  if (displaySetPoints)
+  {    
+    tft.fillRect(70, 170, 100, 90, WHITE);
+    tft.setCursor(84, 175);
+    tft.fillRect(72, 172, 96, 86, BLACK);
+    tft.setTextSize(2);
+    tft.print("View");
+    tft.setCursor(80, 200);
+    tft.print("Points");
+    displaySetPoints = 0;
+  }
   
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
@@ -496,7 +540,7 @@ void loop() {
     //tft.fillScreen(BLACK);
     //unsigned long start = micros();
     //set temp up
-    if (p.x > 0 && p.x < 50 && p.y > 260 && p.y < 300) {
+    if (p.x > 15 && p.x < 55 && p.y > 200 && p.y < 240) {
       setCurrentTemp = setCurrentTemp + 1;
       displaySetTemp  = 1;
       if (setCurrentTemp > 95){
@@ -504,7 +548,7 @@ void loop() {
       }
     }
     //set temp down
-    else if (p.x > 70 && p.x < 110 && p.y > 260 && p.y < 300) {
+    else if (p.x > 15 && p.x < 55 && p.y > 280 && p.y < 325) {
       setCurrentTemp = setCurrentTemp - 1 ;
       displaySetTemp = 1;
       if (setCurrentTemp < 60){
@@ -554,6 +598,10 @@ void loop() {
       delay(500);
       loopSettingMenu();
       
+    }
+    else if (p.x > 75 && p.x < 175 && p.y > 185 && p.y < 275){
+      tft.fillScreen(BLACK);
+      viewPoints();
     }
     
   }
