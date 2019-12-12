@@ -101,6 +101,29 @@ int settingTime = 1;
 //Displays the set points
 int displaySetPoints=1;
 
+//Weekday set points
+int tempWeekday1[3] = {72, 7, 45};
+int tempWeekday2[3] = {72, 10, 15};
+int tempWeekday3[3] = {72, 14, 30};
+int tempWeekday4[3] = {72, 17, 10};
+
+//Weekend set points
+int tempWeekend1[3] = {72, 7, 45};
+int tempWeekend2[3] = {72, 10, 15};
+int tempWeekend3[3] = {72, 14, 30};
+int tempWeekend4[3] = {72, 17, 10};
+
+int checkPoint1 = 0;
+int checkPoint2 = 0;
+int checkPoint3 = 0;
+int checkPoint4 = 0;
+int checkPoint5 = 0;
+int checkPoint6 = 0;
+int checkPoint7 = 0;
+int checkPoint8 = 0;
+
+int displayViewPoints = 1;
+
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 void setup() {
@@ -323,6 +346,7 @@ void loopSettingMenu(){
         showCurrTemp = 1;
         displayTime = 1;
         tft.fillScreen(BLACK);
+        displaySetPoints = 1;
         delay(500);
         return;
       }
@@ -332,11 +356,407 @@ void loopSettingMenu(){
 
 void viewPoints()
 {
-  //tft.fillRect(15, 8, 200, 40, RED);
-  tft.setCursor(20, 10);
-  tft.setTextSize(2);
-  tft.print("Set Point View");
+  
   while(1)
+  {
+    if (displayViewPoints)
+    {
+      tft.setCursor(20, 10);
+      tft.setTextSize(2);
+      tft.print("Set Point View");
+      tft.setCursor(0,50);
+      tft.setTextSize(2);
+      tft.print("Weekday     Weekend");  
+      tft.setCursor(110, 70);
+      tft.setTextSize(1);
+      tft.print("On/Off         On/Off");
+      tft.setCursor(0, 90);
+      tft.setTextSize(2);
+      tft.print(tempWeekday1[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekday1[1]);
+      tft.print(":");
+      tft.print(tempWeekday1[2]);
+      tft.setCursor(0, 140);
+      tft.setTextSize(2);
+      tft.print(tempWeekday2[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekday2[1]);
+      tft.print(":");
+      tft.print(tempWeekday2[2]);
+      tft.setCursor(0, 190);
+      tft.setTextSize(2);
+      tft.print(tempWeekday3[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekday3[1]);
+      tft.print(":");
+      tft.print(tempWeekday3[2]);
+      tft.setCursor(0, 240);
+      tft.setTextSize(2);
+      tft.print(tempWeekday4[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekday4[1]);
+      tft.print(":");
+      tft.print(tempWeekday4[2]);
+      if (checkPoint1 == 1)
+      {
+         tft.fillRect(120, 90, 15, 15, GREEN);
+      }
+      else
+      {
+         tft.fillRect(120, 90, 15, 15, WHITE);
+      }
+      if (checkPoint2 == 1)
+      {
+         tft.fillRect(120, 140, 15, 15, GREEN);
+      }
+      else
+      {
+         tft.fillRect(120, 140, 15, 15, WHITE);
+       }
+       if (checkPoint3 == 1)
+       {
+         tft.fillRect(120, 190, 15, 15, GREEN);
+       }
+       else
+       {
+          tft.fillRect(120, 190, 15, 15, WHITE);
+       }
+      if (checkPoint4 == 1)
+      {
+      tft.fillRect(120, 240, 15, 15, GREEN);
+      }
+      else
+      {
+         tft.fillRect(120, 240, 15, 15, WHITE);
+      }
+      tft.setCursor(110, 115);
+      tft.setTextSize(1);
+      tft.setTextSize(2);
+      tft.print(tempWeekend1[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekend1[1]);
+      tft.print(":");
+      tft.print(tempWeekend1[2]);
+      tft.setCursor(110, 165);
+      tft.setTextSize(1);
+       tft.setTextSize(2);
+      tft.print(tempWeekend2[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekend2[1]);
+      tft.print(":");
+      tft.print(tempWeekend2[2]);
+      tft.setCursor(110, 215);
+      tft.setTextSize(1);
+       tft.setTextSize(2);
+      tft.print(tempWeekend3[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekend3[1]);
+      tft.print(":");
+      tft.print(tempWeekend3[2]);
+      tft.setCursor(110, 265);
+      tft.setTextSize(1);
+       tft.setTextSize(2);
+      tft.print(tempWeekend4[0]);
+      tft.setTextSize(1);
+      tft.print("o");
+      tft.setTextSize(2);
+      tft.print("F");
+      tft.setTextSize(1);
+      tft.print(" ");
+      tft.setTextSize(2);
+      tft.print(tempWeekend4[1]);
+      tft.print(":");
+      tft.print(tempWeekend4[2]);
+      if (checkPoint5 == 1)
+      {
+          tft.fillRect(220, 115, 15, 15, GREEN);
+      }
+      else
+      {
+
+          tft.fillRect(220, 115, 15, 15, WHITE);
+      }
+      if (checkPoint6 == 1)
+      {
+          tft.fillRect(220, 165, 15, 15, GREEN);
+      }
+      else
+      {
+          tft.fillRect(220, 165, 15, 15, WHITE);
+      }
+      if (checkPoint7 == 1)
+      {
+          tft.fillRect(220, 215, 15, 15, GREEN);
+      }
+      else
+      {
+          tft.fillRect(220, 215, 15, 15, WHITE);
+      }
+      if (checkPoint8 == 1)
+      {
+          tft.fillRect(220, 265, 15, 15, GREEN);
+      }
+      else
+      {
+          tft.fillRect(220, 265, 15, 15, WHITE);
+      }
+      tft.setTextSize(4);
+      tft.setCursor(0, 290);
+      tft.print("Back>");
+      displayViewPoints = 0;
+    }
+    DateTime now = rtc.now();
+    // need the next 5 lines for detecting the touch
+    digitalWrite(13, HIGH);
+    TSPoint p = ts.getPoint();
+    digitalWrite(13, LOW);
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+
+    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+    
+      // scale from 0->1023 to tft.width
+      p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      p.y = map(p.y, TS_MINY, TS_MAXY, tft.height(), 0);
+  
+      
+      Serial.print("("); Serial.print(p.x);
+      Serial.print(", "); Serial.print(p.y);
+      Serial.println(")");
+
+      //Weekday 1
+      if (p.x > 10 && p.x < 105 && p.y > 100 && p.y < 130) {
+        tft.fillScreen(BLACK);
+        setTimePoint(1);
+      }
+      //Weekday 2
+      else if (p.x > 10 && p.x < 105 && p.y > 150 && p.y < 180) {
+        tft.fillScreen(BLACK);
+        setTimePoint(2);
+      }
+      //Weekday 3
+      else if (p.x > 10 && p.x < 105 && p.y > 200 && p.y < 230) {
+        tft.fillScreen(BLACK);
+        setTimePoint(3);
+      }
+      //Weekday 4
+      else if (p.x > 10 && p.x < 105 && p.y > 250 && p.y < 280) {
+        tft.fillScreen(BLACK);
+        setTimePoint(4);
+      }
+      //Weekend 1
+      else if (p.x > 120 && p.x < 220 && p.y > 125 && p.y < 145) {
+        tft.fillScreen(BLACK);
+        setTimePoint(5);
+      }
+      //Weekend 2
+      else if (p.x > 120 && p.x < 220 && p.y > 175 && p.y < 195) {
+        tft.fillScreen(BLACK);
+        setTimePoint(6);
+      }
+      //Weekend 3
+      else if (p.x > 120 && p.x < 220 && p.y > 225 && p.y < 245) {
+        tft.fillScreen(BLACK);
+        setTimePoint(7);
+      }
+      //Weekend 4
+      else if (p.x > 120 && p.x < 220 && p.y > 275 && p.y < 295) {
+        tft.fillScreen(BLACK);
+        setTimePoint(8);
+      }
+      //Box 1
+      else if (p.x > 125 && p.x < 145 && p.y > 100 && p.y < 120) {
+        if (checkPoint1 == 0)
+        {
+          checkPoint1 = 1;
+          tft.fillRect(120, 90, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint1 = 0;
+          tft.fillRect(120, 90, 15, 15, WHITE);
+        }
+        delay(750);
+      }
+      //Box 2
+      else if (p.x > 125 && p.x < 145 && p.y > 150 && p.y < 170) {
+        if (checkPoint2 == 0)
+        {
+          checkPoint2 = 1;
+          tft.fillRect(120, 140, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint2 = 0;
+          tft.fillRect(120, 140, 15, 15, WHITE);
+        }
+        delay(750);
+      }
+      //Box 3
+      else if (p.x > 125 && p.x < 145 && p.y > 200 && p.y < 220) {
+        if (checkPoint3 == 0)
+        {
+          checkPoint3 = 1;
+          tft.fillRect(120, 190, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint3 = 0;
+          tft.fillRect(120, 190, 15, 15, WHITE);
+        }
+        delay(750);
+      }
+      //Box 4
+      else if (p.x > 125 && p.x < 145 && p.y > 250 && p.y < 270) {
+         if (checkPoint4 == 0)
+        {
+          checkPoint4 = 1;
+          tft.fillRect(120, 240, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint4 = 0;
+          tft.fillRect(120, 240, 15, 15, WHITE);
+        }
+        delay(750);
+      }
+      //Box 5
+      else if (p.x > 225 && p.x < 245 && p.y > 130 && p.y < 150) {
+        if (checkPoint5 == 0)
+        {
+          checkPoint5 = 1;
+          tft.fillRect(220, 115, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint5 = 0;
+          tft.fillRect(220, 115, 15, 15, WHITE);
+        }
+        delay(750);
+      }
+      //Box 6
+      else if (p.x > 225 && p.x < 245 && p.y > 180 && p.y < 200) {
+        if (checkPoint6 == 0)
+        {
+          checkPoint6 = 1;
+          tft.fillRect(220, 165, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint6 = 0;
+          tft.fillRect(220, 165, 15, 15, WHITE);
+        }
+        delay(750);  
+      }
+      //Box 7
+      else if (p.x > 225 && p.x < 245 && p.y > 230 && p.y < 250) {
+        if (checkPoint7 == 0)
+        {
+          checkPoint7 = 1;
+          tft.fillRect(220, 215, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint7 = 0;
+          tft.fillRect(220, 215, 15, 15, WHITE);
+        }
+        delay(750); 
+      }
+      //Box 8
+      else if (p.x > 225 && p.x < 245 && p.y > 280 && p.y < 300) {
+        if (checkPoint8 == 0)
+        {
+          checkPoint8 = 1;
+          tft.fillRect(220, 265, 15, 15, GREEN);
+        }
+        else
+        {
+          checkPoint8 = 0;
+          tft.fillRect(220, 265, 15, 15, WHITE);
+        }
+        delay(750);  
+      }
+      //Back
+      else if (p.x > 0 && p.x < 95 && p.y > 290 && p.y < 325) {
+        optionsMenu = 0;
+        displaySettings = 1;
+        displayHVAC = 1;
+        displaySetTemp = 1;
+        showCurrTemp = 1;
+        displayTime = 1;
+        tft.fillScreen(BLACK);
+        displaySetPoints = 1;
+        delay(500);
+        return;
+      }
+    }
+    
+  }
+}
+
+void setTimePoint(int i)
+{
+  tft.setTextColor(YELLOW);
+  tft.setTextSize(3);
+  tft.setCursor(0, 0);
+  if (i < 5)
+  {
+    tft.print("Set Weekday");
+    tft.print(i);
+  }
+  else
+  {
+    tft.print("Set Weekend");
+    tft.print(i-4);
+  }
+  tft.setTextSize(4);
+  tft.setCursor(0, 290);
+  tft.print("Back>");
+  
+  while (1)
   {
     DateTime now = rtc.now();
     // need the next 5 lines for detecting the touch
@@ -356,11 +776,16 @@ void viewPoints()
       Serial.print("("); Serial.print(p.x);
       Serial.print(", "); Serial.print(p.y);
       Serial.println(")");
+      //Back
+      if (p.x > 0 && p.x < 95 && p.y > 290 && p.y < 325) {
+        tft.fillScreen(BLACK);
+        delay(500);
+        displayViewPoints = 1;
+        return;
+      }
     }
-    
   }
 }
-
 
 void loop() {
   DateTime now = rtc.now();
@@ -381,23 +806,26 @@ void loop() {
   float temperatureC = sensors.getTempCByIndex(0);
   float temperatureF = sensors.getTempFByIndex(0);
 
-  // blue (cooling led on and red off
+  // blue cooling led on and red off
   // REPLACE 72 WITH USER SET VARIABLE AND -1
   //  example: if (temperatureF < setByUser - 1) {
-  if ((temperatureF > setCurrentTemp - 1) && (currentHVAC == 2 || currentHVAC == 3) ){
+  if ((temperatureF > setCurrentTemp +1) && (currentHVAC == 2 || currentHVAC == 3) ){
     digitalWrite(11, HIGH);
     digitalWrite(12, LOW);
+    tft.fillCircle(205, 255, 15, BLUE);
   }
   // red (heating) lad on and blue off
   // REPLACE 71 WITH USER SET VARIABLE AND +1
-  else if( temperatureF < setCurrentTemp + 1 && (currentHVAC == 1 || currentHVAC == 3)){
+  else if( temperatureF < setCurrentTemp && (currentHVAC == 1 || currentHVAC == 3)){
     digitalWrite(12, HIGH);
     digitalWrite(11, LOW); 
+    tft.fillCircle(205, 255, 15, RED);
   }
   // if exactly the set temp then both leds are off
   else{
     digitalWrite(12, LOW);
     digitalWrite(11, LOW);
+    tft.fillCircle(205, 255, 15, BLACK);
   }
 
   if (showCurrTemp){
@@ -600,6 +1028,7 @@ void loop() {
       
     }
     else if (p.x > 75 && p.x < 175 && p.y > 185 && p.y < 275){
+      displayViewPoints = 1;
       tft.fillScreen(BLACK);
       viewPoints();
     }
