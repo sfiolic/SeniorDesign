@@ -57,6 +57,16 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass oneWire reference to DallasTemperature library
 DallasTemperature sensors(&oneWire);
 
+//for dimming screen
+unsigned long startTime;
+unsigned long stopTime;
+unsigned long elapsedTime;
+
+//screen touched
+int screenTouched = 0;
+
+// 
+int dimScreen = 0;
 
 //last recorded temp
 int temperatureFLast = 0; 
@@ -145,6 +155,9 @@ int setHold = 0;
 //display hold
 int displayHold = 1;
 
+//display dim = 1;
+int displayNotDim = 1;
+
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
 void setup() {
@@ -175,6 +188,10 @@ void setup() {
   pinMode(11, OUTPUT);
   //red led
   pinMode(12, OUTPUT);
+
+  pinMode(37, OUTPUT);
+  digitalWrite(37,HIGH);
+  startTime = millis();
 }
 
 #define MINPRESSURE 10
@@ -258,7 +275,7 @@ void loopSettingTime(){
 //  prevMin = now.minute();
 
   tft.setCursor(150, 280);
-  tft.fillRect(150, 270, 230, 50, RED);
+  tft.fillRect(150, 270, 230, 50, BLACK);
   tft.setTextColor(YELLOW); tft.setTextSize(3);
   tft.print("Back>");
   
@@ -468,22 +485,13 @@ void loopSettingMenu(){
 
     if (settingsPage){
       tft.setCursor(0, 10);
-      tft.fillRect(0, 0, 230, 50, RED);
+      tft.fillRect(0, 0, 230, 50,BLACK);
       tft.setTextColor(YELLOW); tft.setTextSize(3);
       tft.print("Set time>");
   
-      tft.setCursor(0, 70);
-      tft.fillRect(0, 60, 230, 50, RED);
-      tft.setTextColor(YELLOW); tft.setTextSize(3);
-      tft.print("Set Week>");
-  
-      tft.setCursor(0, 130);
-      tft.fillRect(0, 120, 230, 50, RED);
-      tft.setTextColor(YELLOW); tft.setTextSize(3);
-      tft.print("Set Weekend>");
   
       tft.setCursor(0, 280);
-      tft.fillRect(0, 270, 230, 50, RED);
+      tft.fillRect(0, 270, 230, 50, BLACK);
       tft.setTextColor(YELLOW); tft.setTextSize(3);
       tft.print("Back>");
 
@@ -506,17 +514,11 @@ void loopSettingMenu(){
         settingTime = 1;
         loopSettingTime();
       }
-      //set week hold
-      else if (p.x > 0 && p.x < 240 && p.y > 70 && p.y < 120) {
-        
-      }
-      //set weekend hold
-      else if (p.x > 0 && p.x < 240 && p.y > 130 && p.y < 180) {
-        
-      }
+      
       //go back to main page
       else if (p.x > 0 && p.x < 240 && p.y > 280 && p.y < 340) {
         optionsMenu = 0;
+        displayHold = 1;
         displaySettings = 1;
         displayHVAC = 1;
         displaySetTemp = 1;
@@ -533,7 +535,6 @@ void loopSettingMenu(){
 
 void viewPoints()
 {
-  
   while(1)
   {
     if (displayViewPoints)
@@ -899,6 +900,7 @@ void viewPoints()
       //Back
       else if (p.x > 0 && p.x < 95 && p.y > 290 && p.y < 325) {
         optionsMenu = 0;
+        displayHold = 1;
         displaySettings = 1;
         displayHVAC = 1;
         displaySetTemp = 1;
@@ -1743,6 +1745,25 @@ void loop() {
   pinMode(XM, OUTPUT);
   pinMode(YP, OUTPUT);
 
+  //for dimming screen
+//unsigned long startTime;
+//unsigned long stopTime;
+//unsigned long elapsedTime;
+//
+////screen touched
+//int screenTouched = 0;
+
+  startTime = millis();
+  if (screenTouched){
+    digitalWrite(37,HIGH);
+    screenTouched = 0;
+  }
+ 
+  if ( (startTime - stopTime) > 50000){
+    digitalWrite(37,LOW);
+  }
+
+  
   
 
   
@@ -1904,6 +1925,7 @@ void loop() {
   
   }
 
+ 
   if (displaySetPoints)
   {    
     tft.fillRect(70, 170, 100, 90, WHITE);
@@ -1915,13 +1937,90 @@ void loop() {
     tft.print("Points");
     displaySetPoints = 0;
   }
+
+
+  //set point override weekdays
+  if ( !setHold){ //if off
+    
+    //if any checkPoint# is on
+    if(checkPoint1 || checkPoint2 || checkPoint3 || checkPoint4 || checkPoint5 || checkPoint6
+    || checkPoint7 || checkPoint8)
+    {
+      //check for M-F
+      if(now.dayOfTheWeek() == 1 || now.dayOfTheWeek() == 2 || now.dayOfTheWeek() == 3 ||
+        now.dayOfTheWeek() == 4 || now.dayOfTheWeek() == 5 )
+        {
+          //weekday setting 1
+          if (now.hour() == tempWeekday1[1] && now.minute() == tempWeekday1[2])
+          {
+            setCurrentTemp = tempWeekday1[0];
+            displaySetTemp = 1;
+          }
+          //weekday setting 2
+          else if (now.hour() == tempWeekday2[1] && now.minute() == tempWeekday2[2])
+          {
+            setCurrentTemp = tempWeekday2[0];
+            displaySetTemp = 1;
+          }
+          //weekday setting 3
+          else if (now.hour() == tempWeekday3[1] && now.minute() == tempWeekday3[2])
+          {
+            setCurrentTemp = tempWeekday3[0];
+            displaySetTemp = 1;
+          }
+          //weekday setting 4
+          else if (now.hour() == tempWeekday4[1] && now.minute() == tempWeekday4[2])
+          {
+            setCurrentTemp = tempWeekday4[0];
+            displaySetTemp = 1;
+          }
+          
+        }
+        else
+        {
+           //weekend setting 1
+          if (now.hour() == tempWeekend1[1] && now.minute() == tempWeekend1[2])
+          {
+            setCurrentTemp = tempWeekend1[0];
+            displaySetTemp = 1;
+          }
+          //weekend setting 2
+          else if (now.hour() == tempWeekend2[1] && now.minute() == tempWeekend2[2])
+          {
+            setCurrentTemp = tempWeekend2[0];
+            displaySetTemp = 1;
+          }
+          //weekend setting 3
+          else if (now.hour() == tempWeekend3[1] && now.minute() == tempWeekend3[2])
+          {
+            setCurrentTemp = tempWeekend3[0];
+            displaySetTemp = 1;
+          }
+          //weekend setting 4
+          if (now.hour() == tempWeekend4[1] && now.minute() == tempWeekend4[2])
+          {
+            setCurrentTemp = tempWeekend4[0];
+            displaySetTemp = 1;
+          }
+        }
+    }
+
+    //if the day is correct
+    //check if its the set time of check point
+    //set the current temp to be that 
+ 
+  }
+  
   
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
 
   // this is when the screen is touched anywhere 
   if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-    
+    stopTime = millis();
+    screenTouched = 1;
+    displayNotDim = 1;
+    digitalWrite(37,HIGH);
     // scale from 0->1023 to tft.width
     p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
     p.y = map(p.y, TS_MINY, TS_MAXY, tft.height(), 0);
